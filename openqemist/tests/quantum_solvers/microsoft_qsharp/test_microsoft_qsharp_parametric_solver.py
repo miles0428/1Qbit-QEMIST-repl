@@ -35,7 +35,7 @@ def matricize_2rdm(two_rdm, n_electrons, n_orbitals):
     
     l = 0
     sq = n_orbitals*n_orbitals
-    jpqrs = np.zeros((n_orbitals,n_orbitals),dtype=np.int)
+    jpqrs = np.zeros((n_orbitals,n_orbitals),dtype=np.int64)
     for i in range(n_orbitals):
         for j in range(n_orbitals):
             jpqrs[i,j] = l
