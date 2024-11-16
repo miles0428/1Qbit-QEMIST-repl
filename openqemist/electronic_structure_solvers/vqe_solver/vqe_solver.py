@@ -74,7 +74,7 @@ class VQESolver(ElectronicStructureSolver):
         self.hardware_backend = None
         self.ansatz_type = None
         self.optimizer = None
-        self.initial_amplitude_function = mp2_initial_amplitudes
+        self.initial_amplitude_function = None
         self.initial_amplitudes = None
 
     def simulate(self, molecule, mean_field=None):
@@ -104,8 +104,10 @@ class VQESolver(ElectronicStructureSolver):
         # If no set of initial amplitudes was provided, set them as MP2 amplitudes
         if self.initial_amplitudes:
             amplitudes = self.initial_amplitudes
+        elif self.initial_amplitude_function:
+            amplitudes = self.initial_amplitude_function()
         else:
-            amplitudes = self.initial_amplitude_function(molecule, mean_field)
+            amplitudes = self.random_initial_amplitudes()
         if self.verbose:
             print("VQE : initial amplitudes\n", amplitudes, "\n\n")
 
@@ -161,3 +163,6 @@ class VQESolver(ElectronicStructureSolver):
             print("\t\tNumber of Function Evaluations : ", result.nfev)
 
         return result.fun
+    
+    def random_initial_amplitudes(self):
+        return np.random.rand(self.hardware_backend.amplitude_dimension)

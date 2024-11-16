@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__version__ = "0.1.1"
+__version__ = "test-vqe 0.0.4"
 
 from . import problem_decomposition
 from . import electronic_structure_solvers
