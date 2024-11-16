@@ -38,10 +38,14 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/1QB-Information-Technologies/openqemist",
     packages=setuptools.find_packages(),
-    install_requires=['pyscf==1.6', 'numpy', 'scipy', 'qsharp'],
+    install_requires=['pyscf==1.6', 'numpy', 'scipy', 'qsharp', 'qiskit'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
         "License :: OSI Approved :: Apache Software License"
     ],
+    data_files=[('dummy_0.2.yaml', ['openqemist/quantum_solvers/ibm_qiskit/dummy_0.2.yaml',
+                                    'openqemist/quantum_solvers/microsoft_qsharp/dummy_0.2.yaml',
+                                    'openqemist/quantum_solvers/nvidia_cudaq/dummy_0.2.yaml'])],
+    include_package_data=True,
 )
