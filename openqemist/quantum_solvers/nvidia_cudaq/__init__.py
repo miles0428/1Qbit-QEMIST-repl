@@ -12,6 +12,4 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from .microsoft_qsharp.microsoft_qsharp_parametric_solver import MicrosoftQSharpParametricSolver
-from .ibm_qiskit.ibm_qiskit_parametric_solver import IBMQiskitParametricSolver
-from .nvidia_cudaq.nvidia_cudaq_parametric_solver import NvidiaCudaQParametricSolver
+from .nvidia_cudaq_parametric_solver import NvidiaCudaQParametricSolver
