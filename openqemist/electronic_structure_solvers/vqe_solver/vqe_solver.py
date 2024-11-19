@@ -98,6 +98,8 @@ class VQESolver(ElectronicStructureSolver):
                     RuntimeWarning)
 
         # Set up the instance of the hardware backend
+        if self.verbose:
+            print("VQE : Setting up hardware backend\n")
         self.hardware_backend = self.hardware_backend_type(self.ansatz_type,
                 molecule, mean_field)
 
