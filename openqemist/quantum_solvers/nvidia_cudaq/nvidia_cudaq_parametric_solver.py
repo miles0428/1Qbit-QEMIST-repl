@@ -32,6 +32,9 @@ import cudaq
 from cudaq import spin
 import qiskit
 
+import cudaq
+cudaq.set_target('nvidia', option="mqpu")
+
 
 
 class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
