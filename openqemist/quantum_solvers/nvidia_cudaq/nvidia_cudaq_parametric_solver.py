@@ -133,7 +133,8 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
         amplitudes = list(amplitudes)
         hamiltonian = self.jw_hamiltonian
-        energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes, execution=cudaq.parallel.mpi).expectation()
+        energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes, execution=cudaq.parallel.thread).expectation()
+        print("completed simulation")
         self.optimized_amplitudes = amplitudes
         
         return energy
