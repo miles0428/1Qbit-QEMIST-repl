@@ -157,7 +157,7 @@ class VQESolver(ElectronicStructureSolver):
         from scipy.optimize import minimize
 
         result = minimize(backend, amplitudes, method='COBYLA',
-                options={'disp':True, 'maxiter':2000, 'rhobeg':0.01, 'tol':1e-5})
+                options={'disp':True, 'maxiter':2000, 'rhobeg':0.01, 'tol':1e-3})
 
         if self.verbose:
             print("\n\t\tOptimal UCCSD Singlet Energy: {}".format(result.fun))
