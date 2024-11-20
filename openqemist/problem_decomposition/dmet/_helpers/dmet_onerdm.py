@@ -35,7 +35,6 @@ def dmet_low_rdm(active_fock, number_active_electrons):
 
     # Extract the occupied part of the one-particle RDM
     num_occ = number_active_electrons / 2
-    print("shape of matrix to get eigenvalue :",active_fock.shape)
     e, c = np.linalg.eigh(active_fock)
     new_index = e.argsort()
     e = e[new_index]
