@@ -44,7 +44,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "License :: OSI Approved :: Apache Software License"
     ],
-    data_files=[('dummy_0.2.yaml', ['openqemist/quantum_solvers/ibm_qiskit/dummy_0.2.yaml',
+    data_files=[('dummy_0.2.yaml', [#'openqemist/quantum_solvers/ibm_qiskit/dummy_0.2.yaml',
                                     'openqemist/quantum_solvers/microsoft_qsharp/dummy_0.2.yaml',
                                     'openqemist/quantum_solvers/nvidia_cudaq/dummy_0.2.yaml'])],
     include_package_data=True,
