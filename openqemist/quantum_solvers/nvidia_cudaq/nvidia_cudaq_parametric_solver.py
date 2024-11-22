@@ -32,7 +32,6 @@ import cudaq
 from cudaq import spin
 import qiskit
 
-import cudaq
 cudaq.set_target('nvidia', option="mqpu")
 
 
@@ -53,7 +52,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
 
-    def __init__(self, ansatz, molecule, mean_field = None):
+    def __init__(self, ansatz, molecule, mean_field = None, solver_options=None):   
         """Initialize the settings for simulation.
 
         If the mean field is not provided, it is automatically calculated.
@@ -117,6 +116,17 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         self.amplitude_dimension = cudaq.kernels.uccsd_num_parameters(self.n_electrons,self.n_qubits)
         amplitudes = np.ones((self.amplitude_dimension), dtype=np.float64)
         self.kernel = CreateKernel(self.n_qubits, self.n_electrons)
+        if solver_options is None:
+            self.solver_options = {}
+            cudaq.set_target('nvidia')
+        else:
+            self.solver_options = solver_options
+            try:
+                cudaq.set_target(solver_options["target"], option=solver_options["option"])
+            except:
+                Warning("Invalid target or option. Using default target and option in solver.")
+                cudaq.set_target('nvidia')
+            
 
     def simulate(self, amplitudes):
         """Perform the simulation for the molecule.
@@ -136,7 +146,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
         amplitudes = list(amplitudes)
         hamiltonian = self.jw_hamiltonian
-        energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes, execution=cudaq.parallel.thread).expectation()
+        energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes, execution = self.solver_options["excution"]).expectation()
         self.optimized_amplitudes = amplitudes
         
         return energy

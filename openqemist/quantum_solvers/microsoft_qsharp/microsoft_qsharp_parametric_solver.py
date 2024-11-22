@@ -47,7 +47,7 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
 
-    def __init__(self, ansatz, molecule, mean_field = None):
+    def __init__(self, ansatz, molecule, mean_field = None, solver_options = None):
         """Initialize the settings for simulation.
 
         If the mean field is not provided it is automatically calculated.
@@ -142,6 +142,7 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         # Retrieve energy offset and number of qubits
         self.n_qubits = self.jw_hamiltonian[0]
         self.energy_offset = self.jw_hamiltonian[3]
+        self.solver_options = solver_options
 
 
     def simulate(self, amplitudes):
