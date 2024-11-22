@@ -32,10 +32,6 @@ import cudaq
 from cudaq import spin
 import qiskit
 
-cudaq.set_target('nvidia', option="mqpu")
-
-
-
 class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
     """Performs an energy estimation for a molecule with a parametric circuit.
 
@@ -115,7 +111,6 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         # Convert Qiskit FermionicOp to CudaQ data-structure
         self.amplitude_dimension = cudaq.kernels.uccsd_num_parameters(self.n_electrons,self.n_qubits)
         amplitudes = np.ones((self.amplitude_dimension), dtype=np.float64)
-        self.kernel = CreateKernel(self.n_qubits, self.n_electrons)
         if solver_options is None:
             self.solver_options = {}
             cudaq.set_target('nvidia')
@@ -126,6 +121,8 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
             except:
                 Warning("Invalid target or option. Using default target and option in solver.")
                 cudaq.set_target('nvidia')
+        self.kernel = CreateKernel(self.n_qubits, self.n_electrons)
+
             
 
     def simulate(self, amplitudes):
