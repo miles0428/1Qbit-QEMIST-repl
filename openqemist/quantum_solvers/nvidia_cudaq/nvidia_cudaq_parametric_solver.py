@@ -112,6 +112,10 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         self.amplitude_dimension = cudaq.kernels.uccsd_num_parameters(self.n_electrons,self.n_qubits)
         amplitudes = np.ones((self.amplitude_dimension), dtype=np.float64)
         self.kernel = _CreateKernel(self.n_qubits, self.n_electrons)
+        if solver_options is None:
+            self.solver_options = {"excution": ""}
+        else:
+            self.solver_options = solver_options
 
             
 
@@ -135,6 +139,9 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         hamiltonian = self.jw_hamiltonian
         energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes, execution = self.solver_options["excution"]).expectation()
         self.optimized_amplitudes = amplitudes
+
+        
+
         
         return energy
 
