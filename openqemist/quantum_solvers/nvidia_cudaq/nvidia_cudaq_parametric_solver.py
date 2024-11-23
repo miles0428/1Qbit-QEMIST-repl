@@ -111,17 +111,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         # Convert Qiskit FermionicOp to CudaQ data-structure
         self.amplitude_dimension = cudaq.kernels.uccsd_num_parameters(self.n_electrons,self.n_qubits)
         amplitudes = np.ones((self.amplitude_dimension), dtype=np.float64)
-        if solver_options is None:
-            self.solver_options = {}
-            cudaq.set_target('nvidia')
-        else:
-            self.solver_options = solver_options
-            try:
-                cudaq.set_target(solver_options["target"], option=solver_options["option"])
-            except:
-                Warning("Invalid target or option. Using default target and option in solver.")
-                cudaq.set_target('nvidia')
-        self.kernel = CreateKernel(self.n_qubits, self.n_electrons)
+        self.kernel = _CreateKernel(self.n_qubits, self.n_electrons)
 
             
 
@@ -284,7 +274,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
         return sum([cudaq.SpinOperator.from_word(label)*coeff for label,coeff in jw_hamiltonian.to_list()])
 
-def CreateKernel(qubit_count: int, electron_count: int):
+def _CreateKernel(qubit_count: int, electron_count: int):
     @cudaq.kernel
     def kernel(thetas: list[float]):
 
