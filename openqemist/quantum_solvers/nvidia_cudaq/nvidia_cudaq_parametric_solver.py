@@ -109,7 +109,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         self.jw_hamiltonian = self._QiskitJWToCudaQEncoding(qiskit_jw_hamiltonian)
 
         # Convert Qiskit FermionicOp to CudaQ data-structure
-        self.kernel,self.amplitude_dimension = _CreateKernel(self.n_qubits, self.n_electrons,4)
+        self.kernel,self.amplitude_dimension = _CreateKernel(self.n_qubits, self.n_electrons,2)
         if solver_options is None:
             self.solver_options = {"excution": ""}
         else:
