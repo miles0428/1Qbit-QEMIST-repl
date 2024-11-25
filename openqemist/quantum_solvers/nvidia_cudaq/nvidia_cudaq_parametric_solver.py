@@ -109,9 +109,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         self.jw_hamiltonian = self._QiskitJWToCudaQEncoding(qiskit_jw_hamiltonian)
 
         # Convert Qiskit FermionicOp to CudaQ data-structure
-        self.amplitude_dimension = cudaq.kernels.uccsd_num_parameters(self.n_electrons,self.n_qubits)
-        amplitudes = np.ones((self.amplitude_dimension), dtype=np.float64)
-        self.kernel = _CreateKernel(self.n_qubits, self.n_electrons)
+        self.kernel,self.amplitude_dimension = _CreateKernel(self.n_qubits, self.n_electrons,4)
         if solver_options is None:
             self.solver_options = {"excution": ""}
         else:
@@ -281,14 +279,40 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
         return sum([cudaq.SpinOperator.from_word(label)*coeff for label,coeff in jw_hamiltonian.to_list()])
 
-def _CreateKernel(qubit_count: int, electron_count: int):
+def _CreateKernel(qubit_count: int, electron_count: int , numLayers:int):
+    # @cudaq.kernel
+    # def kernel(thetas: list[float]):
+
+    #     qubits = cudaq.qvector(qubit_count)
+
+    #     for i in range(electron_count):
+    #         x(qubits[i])
+
+    #     cudaq.kernels.uccsd(qubits, thetas, electron_count, qubit_count)
+        
     @cudaq.kernel
-    def kernel(thetas: list[float]):
-
+    def hwe(parameters:list[float]):
+        
         qubits = cudaq.qvector(qubit_count)
+        cnotCoupling = [[int(i), int(i+1)] for i in range(qubit_count - 1)]
 
-        for i in range(electron_count):
-            x(qubits[i])
+        thetaCounter = 0
+        for i in range(qubit_count):
+            ry(parameters[thetaCounter], qubits[i])
+            rz(parameters[thetaCounter + 1], qubits[i])
+            thetaCounter = thetaCounter + 2
 
-        cudaq.kernels.uccsd(qubits, thetas, electron_count, qubit_count)
-    return kernel
+        for i in range(numLayers):
+            for cnot in cnotCoupling:
+                cx(qubits[cnot[0]], qubits[cnot[1]])
+            for q in range(qubit_count):
+                ry(parameters[thetaCounter], qubits[q])
+                rz(parameters[thetaCounter + 1], qubits[q])
+                thetaCounter += 2
+    
+    def num_hwe_parameters(numQubits, numLayers):
+        """
+        For the given number of qubits and layers, return the required number of `hwe` parameters.
+        """
+        return 2 * numQubits * (1 + numLayers)
+    return hwe, num_hwe_parameters(qubit_count, numLayers)
