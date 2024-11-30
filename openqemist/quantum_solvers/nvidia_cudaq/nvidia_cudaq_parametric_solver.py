@@ -141,7 +141,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         if len(amplitudes) != self.amplitude_dimension:
             raise ValueError("Incorrect dimension for amplitude list.")
         
-        simulate_options = {"gradient":False,"async_observe":False,'epsilon':1e-3}
+        simulate_options = {"gradient":False,"async_observe":False,'epsilon':1e-3,'scale_factor':1.0}
         for option in simulate_options:
             simulate_options[option] = kwargs[option] if option in kwargs else simulate_options[option]
                 
@@ -184,7 +184,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
                 
             energy,energy_plus,energy_minus = float(results[0].expectation()),float(results[1].expectation()),float(results[2].expectation())
             gradient = (energy_plus - energy_minus)/(2*simulate_options["epsilon"]*delta)
-            return energy ,gradient
+            return energy ,gradient*simulate_options["scale_factor"]
         else:
             energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes).expectation()
             return energy
