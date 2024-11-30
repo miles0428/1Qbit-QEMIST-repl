@@ -172,7 +172,6 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
                                                            amplitudes_minus,
                                                            qpu_id = 2%self.num_qpus))                    
                 results = [result.get() for result in observe_results]
-                energy,energy_plus,energy_minus = float(results[0].expectation()),float(results[1].expectation()),float(results[2].expectation())
             else: 
                 # synchronous observe because of single qpu or no async option
                 if simulate_options["async_observe"] and self.num_qpus <= 1: 
@@ -182,9 +181,9 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
                 observe_results.append(cudaq.observe(self.kernel, hamiltonian, amplitudes_plus))
                 observe_results.append(cudaq.observe(self.kernel, hamiltonian, amplitudes_minus))
                 results = [result for result in observe_results]
-                energy,energy_plus,energy_minus = float(results[0].expectation()),float(results[1].expectation()),float(results[2].expectation())
+                
+            energy,energy_plus,energy_minus = float(results[0].expectation()),float(results[1].expectation()),float(results[2].expectation())
             gradient = (energy_plus - energy_minus)/(2*simulate_options["epsilon"]*delta)
-            energy = float(observe_results[0].expectation())
             return energy ,gradient
         else:
             energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes).expectation()
