@@ -182,6 +182,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
                 observe_results.append(cudaq.observe(self.kernel, hamiltonian, amplitudes_minus))
                 results = [result for result in observe_results]
             
+            print("finished observing")
             gradient = (float(results[1].expectation()) - float(results[2].expectation()))/(2*simulate_options["epsilon"]*delta)
             energy = float(observe_results[0].expectation())
             return energy ,gradient
