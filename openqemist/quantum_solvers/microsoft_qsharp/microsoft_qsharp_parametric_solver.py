@@ -47,7 +47,7 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
 
-    def __init__(self, ansatz, molecule, mean_field = None, solver_options = None):
+    def __init__(self, ansatz, molecule, mean_field = None):
         """Initialize the settings for simulation.
 
         If the mean field is not provided it is automatically calculated.
@@ -142,10 +142,9 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         # Retrieve energy offset and number of qubits
         self.n_qubits = self.jw_hamiltonian[0]
         self.energy_offset = self.jw_hamiltonian[3]
-        self.solver_options = solver_options
 
 
-    def simulate(self, amplitudes):
+    def simulate(self, amplitudes, **kwargs):
         """Perform the simulation for the molecule.
 
         If the mean field is not provided it is automatically calculated.
@@ -157,6 +156,10 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
             float64: The total energy (energy).
         """
         # Test if right number of amplitudes have been passed
+        simulate_options = {}
+        for option in kwargs:
+            if option not in simulate_options:
+                Warning(f"Option {option} is not a valid option for MicrosoftQSharpParametricSolver.")
         if len(amplitudes) != self.amplitude_dimension:
             raise ValueError("Incorrect dimension for amplitude list.")
 

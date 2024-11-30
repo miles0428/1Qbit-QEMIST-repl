@@ -26,10 +26,11 @@ import qsharp.chemistry as qsharpchem
 # Import pyscf and functions making use of it
 from pyscf import gto, scf
 from .integrals_pyscf import compute_integrals_fragment
-
+from typing import Tuple,Union
 
 import cudaq
 from cudaq import spin
+from cudaq import Kernel
 import qiskit
 
 class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
@@ -47,8 +48,9 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
     class Ansatze(Enum):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
+        HEW = 1
 
-    def __init__(self, ansatz, molecule, mean_field = None, solver_options=None):   
+    def __init__(self, ansatz, molecule, mean_field = None):   
         """Initialize the settings for simulation.
 
         If the mean field is not provided, it is automatically calculated.
@@ -59,6 +61,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
             mean_field (pyscf.scf.RHF, optional): The mean field of the molecule. Defaults to None.
         """
         assert isinstance(ansatz, NvidiaCudaQParametricSolver.Ansatze)
+        self.ansatz = ansatz
         self.verbose = False
 
         # Initialize the number of samples to be used by the MicrosoftQSharp backend
@@ -109,15 +112,13 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         self.jw_hamiltonian = self._QiskitJWToCudaQEncoding(qiskit_jw_hamiltonian)
 
         # Convert Qiskit FermionicOp to CudaQ data-structure
-        self.kernel,self.amplitude_dimension = _CreateKernel(self.n_qubits, self.n_electrons,2)
-        if solver_options is None:
-            self.solver_options = {"excution": ""}
-        else:
-            self.solver_options = solver_options
+        self.kernel,self.amplitude_dimension = _CreateKernel(self.n_qubits, self.n_electrons,2,ansatz)
 
-            
+        
+        self.num_qpus = cudaq.get_target().num_qpus()
 
-    def simulate(self, amplitudes):
+
+    def simulate(self, amplitudes : Union[np.ndarray, list], **kwargs )-> Union[Tuple[float,np.ndarray],float]:
         """Perform the simulation for the molecule.
 
         If the mean field is not provided it is automatically calculated.
@@ -126,24 +127,69 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
             amplitudes (list): The initial amplitudes (float64).
 
         Returns:
-            float64: The total energy (energy).
+            Energy,Gradient (float): 
+            The energy and gradient (if requested) of the molecule.
+                  
+        Raises:
+            ValueError: If the dimension of the amplitudes is incorrect.
+        
+        Warns:
+            Warning: If the async option is requested but not available.
         """
 
         # Test if right number of amplitudes have been passed
         if len(amplitudes) != self.amplitude_dimension:
             raise ValueError("Incorrect dimension for amplitude list.")
-
+        
+        simulate_options = {"gradient":False,"async_observe":False,'epsilon':1e-3}
+        for option in simulate_options:
+            simulate_options[option] = kwargs[option] if option in kwargs else simulate_options[option]
+                
+        for option in kwargs:
+            if option not in simulate_options:
+                Warning(f"Option {option} is not a valid option for this solver.")
+            
         amplitudes = list(amplitudes)
         hamiltonian = self.jw_hamiltonian
-        energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes, execution = self.solver_options["excution"]).expectation()
         self.optimized_amplitudes = amplitudes
 
-        
+        if simulate_options["gradient"]:
+            delta = np.random.randint(2, size=len(amplitudes))*2-1
+            amplitudes_plus = np.array(amplitudes) + simulate_options["epsilon"]*delta
+            amplitudes_minus = np.array(amplitudes) - simulate_options["epsilon"]*delta
+            observe_results =[]
+            if simulate_options["async_observe"] and self.num_qpus > 1:
+                observe_results.append(cudaq.observe_async(self.kernel, 
+                                                           hamiltonian, 
+                                                           amplitudes,
+                                                           qpu_id = 0%self.num_qpus))
+                observe_results.append(cudaq.observe_async(self.kernel, 
+                                                           hamiltonian, 
+                                                           amplitudes_plus,
+                                                           qpu_id = 1%self.num_qpus))
+                observe_results.append(cudaq.observe_async(self.kernel, 
+                                                           hamiltonian, 
+                                                           amplitudes_minus,
+                                                           qpu_id = 2%self.num_qpus))                    
+                results = [result.get() for result in observe_results]
+            else: 
+                # synchronous observe because of single qpu or no async option
+                if simulate_options["async_observe"] and self.num_qpus <= 1: 
+                    # Raise warning if async is requested but not available
+                    warnings.warn("Async option is not available for single qpu.\nUsing synchronous observe instead.")
+                observe_results.append(cudaq.observe(self.kernel, hamiltonian, amplitudes))
+                observe_results.append(cudaq.observe(self.kernel, hamiltonian, amplitudes_plus))
+                observe_results.append(cudaq.observe(self.kernel, hamiltonian, amplitudes_minus))
+                results = [result for result in observe_results]
+            
+            gradient = (float(results[1].expectation()) - float(results[2].expectation()))/(2*simulate_options["epsilon"]*delta)
+            energy = float(observe_results[0].expectation())
+            return energy ,gradient
+        else:
+            energy  = cudaq.observe(self.kernel, hamiltonian, amplitudes).expectation()
+            return energy
 
-        
-        return energy
-
-    def get_rdm(self):
+    def get_rdm(self)-> Tuple[np.ndarray, np.ndarray]:
         """Obtain the RDMs from the optimized amplitudes.
 
         Obtain the RDMs from the optimized amplitudes by using the
@@ -178,12 +224,9 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
                 fh_copy.terms = [single_fh]
                 # Compute qubit Hamiltonian (C# Chemistry library)
                 jw_hamiltonian = JordanWignerMapper().map(self._QsharpFermionToQiskitEncoding(fh_copy))
-
                 self.jw_hamiltonian = self._QiskitJWToCudaQEncoding(jw_hamiltonian)
-
                 # Compute RDM value
-                RDM_value = self.simulate(amplitudes)
-
+                RDM_value = self.simulate(amplitudes, gradient=False, async_observe=False)
                 # Update RDM matrices
                 ferm_ops = single_fh[1][0][0][0]
                 indices = [ferm_op[1] for ferm_op in ferm_ops]
@@ -279,16 +322,16 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
         return sum([cudaq.SpinOperator.from_word(label)*coeff for label,coeff in jw_hamiltonian.to_list()])
 
-def _CreateKernel(qubit_count: int, electron_count: int , numLayers:int):
-    # @cudaq.kernel
-    # def kernel(thetas: list[float]):
+def _CreateKernel(qubit_count: int, electron_count: int , numLayers:int, ansatz: NvidiaCudaQParametricSolver.Ansatze = NvidiaCudaQParametricSolver.Ansatze.UCCSD)->Tuple[Kernel, int]:
+    @cudaq.kernel
+    def kernel(thetas: list[float]):
 
-    #     qubits = cudaq.qvector(qubit_count)
+        qubits = cudaq.qvector(qubit_count)
 
-    #     for i in range(electron_count):
-    #         x(qubits[i])
+        for i in range(electron_count):
+            x(qubits[i])
 
-    #     cudaq.kernels.uccsd(qubits, thetas, electron_count, qubit_count)
+        cudaq.kernels.uccsd(qubits, thetas, electron_count, qubit_count)
         
     @cudaq.kernel
     def hwe(parameters:list[float]):
@@ -315,4 +358,10 @@ def _CreateKernel(qubit_count: int, electron_count: int , numLayers:int):
         For the given number of qubits and layers, return the required number of `hwe` parameters.
         """
         return 2 * numQubits * (1 + numLayers)
-    return hwe, num_hwe_parameters(qubit_count, numLayers)
+    
+    if ansatz == NvidiaCudaQParametricSolver.Ansatze.UCCSD:
+        return kernel, kernel.num_parameters
+    elif ansatz == NvidiaCudaQParametricSolver.Ansatze.HEW:
+        return hwe, num_hwe_parameters(qubit_count, numLayers)
+    else:
+        raise ValueError("Invalid ansatz type.")

@@ -32,6 +32,7 @@ from pyscf import scf
 from openqemist.quantum_solvers.initial_parameters import mp2_initial_amplitudes
 
 from ..electronic_structure_solver import ElectronicStructureSolver
+from functools import partial
 
 class VQESolver(ElectronicStructureSolver):
     """Estimates energy wih a variational quantum eigensolver algorithm.
@@ -76,7 +77,6 @@ class VQESolver(ElectronicStructureSolver):
         self.optimizer = None
         self.initial_amplitude_function = None
         self.initial_amplitudes = None
-        self.hardware_backend_options = None
 
     def simulate(self, molecule, mean_field=None):
         """Perform the simulation for the molecule.
@@ -102,7 +102,7 @@ class VQESolver(ElectronicStructureSolver):
         if self.verbose:
             print("VQE : Setting up hardware backend\n")
         self.hardware_backend = self.hardware_backend_type(self.ansatz_type,
-                molecule, mean_field, self.hardware_backend_options)
+                molecule, mean_field)
 
         # If no set of initial amplitudes was provided, set them as MP2 amplitudes
         if self.initial_amplitudes:
