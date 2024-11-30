@@ -360,7 +360,8 @@ def _CreateKernel(qubit_count: int, electron_count: int , numLayers:int, ansatz:
         return 2 * numQubits * (1 + numLayers)
     
     if ansatz == NvidiaCudaQParametricSolver.Ansatze.UCCSD:
-        return kernel, kernel.num_parameters
+        return kernel, cudaq.kernels.uccsd_num_parameters(electron_count,
+                                                     qubit_count)
     elif ansatz == NvidiaCudaQParametricSolver.Ansatze.HEW:
         return hwe, num_hwe_parameters(qubit_count, numLayers)
     else:
