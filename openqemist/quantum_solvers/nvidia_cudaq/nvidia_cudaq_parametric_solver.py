@@ -50,7 +50,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         UCCSD = 0
         HEW = 1
 
-    def __init__(self, ansatz, molecule, mean_field = None):   
+    def __init__(self, ansatz, molecule, mean_field = None, verbose = False):   
         """Initialize the settings for simulation.
 
         If the mean field is not provided, it is automatically calculated.
@@ -62,7 +62,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         """
         assert isinstance(ansatz, NvidiaCudaQParametricSolver.Ansatze)
         self.ansatz = ansatz
-        self.verbose = False
+        self.verbose = verbose
 
         # Initialize the number of samples to be used by the MicrosoftQSharp backend
         self.n_samples = 1e18
@@ -116,6 +116,8 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
         
         self.num_qpus = cudaq.get_target().num_qpus()
+        if self.verbose :
+            print(f"# of qubits: {self.n_qubits}")
 
 
     def simulate(self, amplitudes : Union[np.ndarray, list], **kwargs )-> Union[Tuple[float,np.ndarray],float]:
