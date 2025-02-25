@@ -78,7 +78,7 @@ class VQESolver(ElectronicStructureSolver):
         self.initial_amplitude_function = None
         self.initial_amplitudes = None
 
-    def simulate(self, molecule, mean_field=None):
+    def simulate(self, molecule, mean_field=None, ncore = 0, nact = None, **kwargs):
         """Perform the simulation for the molecule.
 
         If the mean field is not provided it is automatically calculated.
@@ -102,7 +102,7 @@ class VQESolver(ElectronicStructureSolver):
         if self.verbose:
             print("VQE : Setting up hardware backend\n")
         self.hardware_backend = self.hardware_backend_type(self.ansatz_type,
-                molecule, mean_field,self.verbose)
+                molecule, mean_field,self.verbose, ncore, nact)
 
         # If no set of initial amplitudes was provided, set them as MP2 amplitudes
         if self.initial_amplitudes:
