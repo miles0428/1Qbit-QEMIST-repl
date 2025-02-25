@@ -77,6 +77,16 @@ class DMETProblemDecomposition(ProblemDecomposition):
         if not mean_field.converged:
             warnings.warn("DMET simulating with mean field not converged.", RuntimeWarning)
 
+        if fragment_ncore is None:
+            fragment_ncore = [0 for _ in fragment_atoms]
+        else : 
+            assert len(fragment_ncore) == len(fragment_atoms), 'the shapes of fragment_atoms and fragment_ncore should be the same'
+
+        if fragment_nact is None:
+            fragment_nact = [None for _ in fragment_atoms]
+        else : 
+            assert len(fragment_nact) == len(fragment_atoms), 'the shapes of fragment_atoms and fragment_nact should be the same'
+
         # Construct orbital object
         orbitals = helpers._orbitals(molecule, mean_field,
                 range(molecule.nao_nr()), self.electron_localization_method)
