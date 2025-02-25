@@ -52,7 +52,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
     
 
 
-    def __init__(self, ansatz, molecule, mean_field = None, verbose = False, ncore=0, nact=None):   
+    def __init__(self, ansatz, molecule, mean_field = None, verbose = False, ncore=0, nact=None, **kwargs):   
 
         """Initialize the settings for simulation.
 
