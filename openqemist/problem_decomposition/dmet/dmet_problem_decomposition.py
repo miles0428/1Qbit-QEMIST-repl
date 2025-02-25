@@ -157,7 +157,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
             mf_fragment, fock_frag_copy, mol_frag = helpers._fragment_scf(t_list, two_ele, fock, nelec_high, norb_high, guess_orbitals, chemical_potential)
 
             # Solve the electronic structure
-            energy = self.electronic_structure_solver.simulate(mol_frag, mf_fragment, fragment_ncore[i], fragment_nact[i])
+            energy = self.electronic_structure_solver.simulate(mol_frag, mf_fragment, ncore = fragment_ncore[i], nact = fragment_nact[i])
             # Calculate the RDMs
             cc_onerdm, cc_twordm = self.electronic_structure_solver.get_rdm()
 
