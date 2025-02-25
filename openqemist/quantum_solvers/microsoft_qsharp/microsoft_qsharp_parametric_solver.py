@@ -47,7 +47,7 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
 
-    def __init__(self, ansatz, molecule, mean_field = None, verbose = False):
+    def __init__(self, ansatz, molecule, mean_field = None, verbose = False, **kwargs):
         """Initialize the settings for simulation.
 
         If the mean field is not provided it is automatically calculated.
