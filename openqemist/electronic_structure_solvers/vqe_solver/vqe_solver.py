@@ -102,7 +102,7 @@ class VQESolver(ElectronicStructureSolver):
         if self.verbose:
             print("VQE : Setting up hardware backend\n")
         self.hardware_backend = self.hardware_backend_type(self.ansatz_type,
-                molecule, mean_field)
+                molecule, mean_field,self.verbose)
 
         # If no set of initial amplitudes was provided, set them as MP2 amplitudes
         if self.initial_amplitudes:

@@ -81,6 +81,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
 
     def __init__(self, ansatz, molecule, mean_field = None, verbose = False, ncore=0, nact=None):   
+
         """Initialize the settings for simulation.
 
         If the mean field is not provided, it is automatically calculated.
