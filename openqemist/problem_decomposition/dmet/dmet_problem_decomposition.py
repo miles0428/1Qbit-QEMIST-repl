@@ -46,7 +46,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
         self.electronic_structure_solver = CCSDSolver()
         self.electron_localization_method = iao_localization
 
-    def simulate(self, molecule, fragment_atoms, mean_field = None):
+    def simulate(self, molecule, fragment_atoms, mean_field = None, fragment_ncore=None, fragment_nact=None):
         """Perform DMET single-shot calculation.
 
         If the mean field is not provided it is automatically calculated.
@@ -88,7 +88,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
         # Initialize the energy list and SCF procedure employing newton-raphson algorithm
         energy = []
         chemical_potential = 0.0
-        chemical_potential = scipy.optimize.newton(self._oneshot_loop, chemical_potential, args = (orbitals, orb_list, orb_list2, energy), tol=1e-5)
+        chemical_potential = scipy.optimize.newton(self._oneshot_loop, chemical_potential, args = (orbitals, orb_list, orb_list2, energy, fragment_ncore, fragment_nact), tol=1e-5)
 
         # Get the final energy value
         niter = len(energy)
@@ -101,7 +101,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
 
         return dmet_energy
 
-    def _oneshot_loop(self, chemical_potential, orbitals, orb_list, orb_list2, energy_list):
+    def _oneshot_loop(self, chemical_potential, orbitals, orb_list, orb_list2, energy_list, fragment_ncore, fragment_nact):
         """Perform the DMET loop.
 
         This is the function which runs in the minimizer.
@@ -157,7 +157,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
             mf_fragment, fock_frag_copy, mol_frag = helpers._fragment_scf(t_list, two_ele, fock, nelec_high, norb_high, guess_orbitals, chemical_potential)
 
             # Solve the electronic structure
-            energy = self.electronic_structure_solver.simulate(mol_frag, mf_fragment)
+            energy = self.electronic_structure_solver.simulate(mol_frag, mf_fragment, fragment_ncore[i], fragment_nact[i])
             # Calculate the RDMs
             cc_onerdm, cc_twordm = self.electronic_structure_solver.get_rdm()
 
