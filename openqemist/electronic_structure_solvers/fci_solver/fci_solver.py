@@ -47,7 +47,7 @@ class FCISolver(ElectronicStructureSolver):
         self.nelec = None
         self.cisolver = None
 
-    def simulate(self, molecule, mean_field=None):
+    def simulate(self, molecule, mean_field=None,**kwargs):
         """Perform the simulation (energy calculation) for the molecule.
 
         If the mean field is not provided it is automatically calculated.
