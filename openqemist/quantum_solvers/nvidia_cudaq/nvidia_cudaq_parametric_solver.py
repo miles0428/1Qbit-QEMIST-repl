@@ -49,8 +49,39 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
         HEW = 1
+    
+    def active_space_unpolarized(mf, ncore=0, nact=None):
+        einsum = lib.einsum
 
-    def __init__(self, ansatz, molecule, mean_field = None, verbose = False):   
+        if nact is None:
+            nact = mf.mo_coeff.shape[1] - ncore
+
+        nuclear = mf.mol.energy_nuc()
+        ecore = 0.0
+
+        mo_coeff_core = mf.mo_coeff[:, :ncore]
+        mo_coeff_acti = mf.mo_coeff[:, ncore : ncore + nact]
+
+        h1atom = mf.get_hcore()
+        if ncore != 0:
+            dm_ao_core = 2 * mo_coeff_core @ mo_coeff_core.T
+            vj, vk = mf.get_jk(mf.mol, dm_ao_core)
+            veff_ao = vj - 0.5 * vk
+            ecore += einsum("ij,ji->", dm_ao_core, h1atom + 0.5 * veff_ao)
+            h1atom += veff_ao
+        hpq = einsum("ap,bq,ab->pq", mo_coeff_acti, mo_coeff_acti, h1atom)
+        hpqrs = ao2mo.full(mf.mol, mo_coeff_acti, compact=False).reshape(
+            nact, nact, nact, nact
+        )
+        hpqrs = hpqrs.transpose(0, 2, 3, 1)
+
+        act_nelec = mf.mol.nelectron - ncore * 2
+
+        return nact, act_nelec, nuclear + ecore, hpq, hpqrs
+
+
+    def __init__(self, ansatz, molecule, mean_field = None, verbose = False, ncore=0, nact=None):   
+
         """Initialize the settings for simulation.
 
         If the mean field is not provided, it is automatically calculated.
@@ -69,6 +100,7 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
 
         # Initialize the amplitudes (parameters to be optimized)
         self.optimized_amplitudes = []
+        
 
         # Obtain fragment info with PySCF
         # -----------------------------------------
@@ -76,18 +108,21 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         # Compute mean-field if not provided. Check that it has converged
         if not mean_field:
             mean_field = scf.RHF(molecule)
-            mean_field.verbose = 0
-            mean_field.scf()
+            # mean_field.verbose = 0
+            # mean_field.scf()
+            mean_field.kernel()
 
         if not mean_field.converged:
             warnings.warn("CudaQParametricSolver simulating with mean field not converged.",
                           RuntimeWarning)
+            
+        nact, act_nelec, nuclear, hpq, hpqrs = active_space_unpolarized(mean_field, ncore, nact)
 
         # Set molecule and mean field attributes
-        self.n_orbitals = len(mean_field.mo_energy)
+        self.n_orbitals = nact
         self.n_spin_orbitals = 2 * self.n_orbitals
-        self.n_electrons = molecule.nelectron
-        nuclear_repulsion = mean_field.energy_nuc()
+        self.n_electrons = act_nelec
+        nuclear_repulsion = nuclear
 
         # Get data-structure to store problem description
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -95,9 +130,9 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         molecular_data = qsharpchem.load_broombridge(filename)
 
         # Compute one and two-electron integrals, store them in the Microsoft data-structure
-        integrals_one, integrals_two = compute_integrals_fragment(molecule, mean_field)
-        molecular_data.problem_description[0].hamiltonian['OneElectronIntegrals']['Values'] = integrals_one
-        molecular_data.problem_description[0].hamiltonian['TwoElectronIntegrals']['Values'] = integrals_two
+        # integrals_one, integrals_two = compute_integrals_fragment(molecule, mean_field)
+        molecular_data.problem_description[0].hamiltonian['OneElectronIntegrals']['Values'] = hpq
+        molecular_data.problem_description[0].hamiltonian['TwoElectronIntegrals']['Values'] = hpqrs
         molecular_data.problem_description[0].coulomb_repulsion['Value'] = nuclear_repulsion
 
         # Generate Fermionic and then JW Hamiltonians
