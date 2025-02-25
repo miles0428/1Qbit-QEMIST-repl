@@ -49,54 +49,6 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
         HEW = 1
-
-    def create_hamiltonian_quantum_circuit(hpq, hpqrs, mapper):
-        # NOTE: we exclude the nuclear term here.
-        # We just add the nuclear term to the VQE energy afterwards
-        n_spatial_orb = hpq.shape[0]
-        n_spin_orb = 2 * n_spatial_orb
-
-        fermionic_op_dict = {}
-        for spin in range(2):
-            # 0 is UP 1 is DW
-            for p_spatial_orb in range(n_spatial_orb):
-                for q_spatial_orb in range(n_spatial_orb):
-                    p_spin_orb = spin * n_spatial_orb + p_spatial_orb
-                    q_spin_orb = spin * n_spatial_orb + q_spatial_orb
-
-                    p_qubit = p_spin_orb
-                    q_qubit = q_spin_orb
-                    coeff = hpq[p_spatial_orb, q_spatial_orb]
-                    fermionic_op_dict[f"+_{p_qubit} -_{q_qubit}"] = coeff
-        for spin_ps in range(2):
-            for spin_qr in range(2):
-                for p_spatial_orb in range(n_spatial_orb):
-                    for q_spatial_orb in range(n_spatial_orb):
-                        for r_spatial_orb in range(n_spatial_orb):
-                            for s_spatial_orb in range(n_spatial_orb):
-                                p_spin_orb = spin_ps * n_spatial_orb + p_spatial_orb
-                                q_spin_orb = spin_qr * n_spatial_orb + q_spatial_orb
-                                r_spin_orb = spin_qr * n_spatial_orb + r_spatial_orb
-                                s_spin_orb = spin_ps * n_spatial_orb + s_spatial_orb
-
-                                p_qubit = p_spin_orb
-                                q_qubit = q_spin_orb
-                                r_qubit = r_spin_orb
-                                s_qubit = s_spin_orb
-                                coeff = hpqrs[
-                                    p_spatial_orb,
-                                    q_spatial_orb,
-                                    r_spatial_orb,
-                                    s_spatial_orb,
-                                ]
-                                # multiply by 0.5
-                                fermionic_op_dict[
-                                    f"+_{p_qubit} +_{q_qubit} -_{r_qubit} -_{s_qubit}"
-                                ] = (coeff * 0.5)
-        fermionic_op = FermionicOp(fermionic_op_dict, num_spin_orbitals=n_spin_orb)
-
-        qubit_op = mapper.map(fermionic_op)
-        return qubit_op
     
     def active_space_unpolarized(mf, ncore=0, nact=None):
         einsum = lib.einsum
