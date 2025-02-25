@@ -25,7 +25,7 @@ import qsharp
 import qsharp.chemistry as qsharpchem
 # Import pyscf and functions making use of it
 from pyscf import gto, scf
-from .integrals_pyscf import compute_integrals_fragment
+from .integrals_pyscf import compute_integrals_fragment,active_space_unpolarized
 from typing import Tuple,Union
 
 import cudaq
@@ -50,34 +50,6 @@ class NvidiaCudaQParametricSolver(ParametricQuantumSolver):
         UCCSD = 0
         HEW = 1
     
-    def active_space_unpolarized(mf, ncore=0, nact=None):
-        einsum = lib.einsum
-
-        if nact is None:
-            nact = mf.mo_coeff.shape[1] - ncore
-
-        nuclear = mf.mol.energy_nuc()
-        ecore = 0.0
-
-        mo_coeff_core = mf.mo_coeff[:, :ncore]
-        mo_coeff_acti = mf.mo_coeff[:, ncore : ncore + nact]
-
-        h1atom = mf.get_hcore()
-        if ncore != 0:
-            dm_ao_core = 2 * mo_coeff_core @ mo_coeff_core.T
-            vj, vk = mf.get_jk(mf.mol, dm_ao_core)
-            veff_ao = vj - 0.5 * vk
-            ecore += einsum("ij,ji->", dm_ao_core, h1atom + 0.5 * veff_ao)
-            h1atom += veff_ao
-        hpq = einsum("ap,bq,ab->pq", mo_coeff_acti, mo_coeff_acti, h1atom)
-        hpqrs = ao2mo.full(mf.mol, mo_coeff_acti, compact=False).reshape(
-            nact, nact, nact, nact
-        )
-        hpqrs = hpqrs.transpose(0, 2, 3, 1)
-
-        act_nelec = mf.mol.nelectron - ncore * 2
-
-        return nact, act_nelec, nuclear + ecore, hpq, hpqrs
 
 
     def __init__(self, ansatz, molecule, mean_field = None, verbose = False, ncore=0, nact=None):   
