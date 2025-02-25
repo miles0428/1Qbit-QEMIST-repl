@@ -41,7 +41,7 @@ class CCSDSolver(ElectronicStructureSolver):
     def __init__(self):
         self.cc_fragment = None
 
-    def simulate(self, molecule, mean_field=None):
+    def simulate(self, molecule, mean_field=None, **kwargs):
         """Perform the simulation (energy calculation) for the molecule.
 
         If the mean field is not provided it is automatically calculated.
