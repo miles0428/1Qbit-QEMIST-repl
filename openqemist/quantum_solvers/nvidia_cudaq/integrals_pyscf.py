@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import numpy as np
+from pyscf import ao2mo,lib
 
 def compute_integrals_fragment(mol, myhf):
     """ 
