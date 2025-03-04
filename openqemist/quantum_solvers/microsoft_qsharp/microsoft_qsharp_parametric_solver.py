@@ -142,8 +142,8 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         # Retrieve energy offset and number of qubits
         self.n_qubits = self.jw_hamiltonian[0]
         self.energy_offset = self.jw_hamiltonian[3]
-	if self.verbose :
-		print(f"# of qubits: {self.n_qubits}")
+        if self.verbose:
+		             print(f"# of qubits: {self.n_qubits}")
 
 
     def simulate(self, amplitudes, **kwargs):
